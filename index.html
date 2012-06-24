@@ -47,6 +47,18 @@
   <link href="/atom.xml" rel="alternate" title="Calio's Blog" type="application/atom+xml">
   
   
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-32886133-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
 
 </head>
 
@@ -119,7 +131,7 @@
     $(document).ready(function(){
         github.showRepos({
             user: 'calio',
-            count: 0,
+            count: 4,
             skip_forks: true,
             target: '#gh_repos'
         });
@@ -141,7 +153,7 @@
   </script>
   <script src="/javascripts/asides/twitter.js" type="text/javascript"> </script>
   
-    <a href="http://twitter.com/_calio" class="twitter-follow-button" data-show-count="false">Follow @_calio</a>
+    <a href="http://twitter.com/_calio" class="twitter-follow-button" data-show-count="true">Follow @_calio</a>
   
 </section>
 
@@ -162,6 +174,19 @@
 
 </footer>
   
+
+<script type="text/javascript">
+      var disqus_shortname = 'calio';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
 
 
 
