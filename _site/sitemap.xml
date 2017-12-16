@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>http://localhost:4000/2015/01/30/Lorem/</loc>
+<lastmod>2015-01-30T00:00:00-08:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/update/2015/02/06/welcome-to-jekyll/</loc>
+<lastmod>2015-02-06T06:37:44-08:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/2015/02/17/curabitur/</loc>
+<lastmod>2015-02-17T00:00:00-08:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/</loc>
+</url>
+</urlset>
