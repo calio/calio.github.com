@@ -1,6 +1,6 @@
 locale: "en-US"
 title: Strata # Title of your site
-url: "http://yourdomain.com" # the base hostname & protocol for your site
+url: "https://calio.github.io" # the base hostname & protocol for your site
 baseurl: "" # the subpath of your site, e.g. /blog/
 google_analytics_key: ""
 
@@ -12,9 +12,9 @@ description: > # this means to ignore newlines until "baseurl:"
 
 # Author details for the jekyll-seo-tag gem
 author:
-  name: Your Name
-  email: your-email@domain.com
-  twitter: # twitter username without the @ symbol
+  name: Jiale Zhi
+  email: vipcalio@gmail.com
+  twitter: _calio
 
 # Social details for the jekyll-seo-tag gem
 social:

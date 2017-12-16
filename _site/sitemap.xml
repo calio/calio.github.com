@@ -13,6 +13,14 @@
 <lastmod>2015-02-17T00:00:00-08:00</lastmod>
 </url>
 <url>
+<loc>http://localhost:4000/2017/01/01/AAA/</loc>
+<lastmod>2017-01-01T00:00:00-08:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/2017/01/02/BBB/</loc>
+<lastmod>2017-01-02T00:00:00-08:00</lastmod>
+</url>
+<url>
 <loc>http://localhost:4000/</loc>
 </url>
 </urlset>
