@@ -1,20 +1,82 @@
+- title: "Perception Encoder: The Best Visual Embeddings Are Not at the Output of the Network"
+  authors: "Daniel Bolya, Po-Yao Huang, Peize Sun, Jang Hyun Cho, Andrea Madotto, Chen Wei, Tengyu Ma, Jiale Zhi, Jathushan Rajasegaran, Hanoona Rasheed, Junke Wang, Marco Monteiro, Hu Xu, Shiyu Dong, Nikhila Ravi, Daniel Li, Piotr Dollár, Christoph Feichtenhofer"
+  venue: "NeurIPS 2025 (Oral)"
+  year: 2025
+  image: /assets/images/publications/perception-encoder.png
+  featured: true
+  links:
+    - name: Paper
+      url: https://arxiv.org/abs/2504.13181
+    - name: Code
+      url: https://github.com/facebookresearch/perception_models
+
+- title: "Enhanced POET: Open-Ended Reinforcement Learning through Unbounded Invention of Learning Challenges and their Solutions"
+  authors: "Rui Wang, Joel Lehman, Aditya Rawal, Jiale Zhi, Yulun Li, Jeff Clune, Kenneth O. Stanley"
+  venue: "ICML 2020"
+  year: 2020
+  image: /assets/images/publications/poet.png
+  featured: true
+  links:
+    - name: Paper
+      url: https://arxiv.org/abs/2003.08536
+    - name: Blog
+      url: https://www.uber.com/blog/enhanced-poet-machine-learning/
+
 - title: "Fiber: A Platform for Efficient Development and Distributed Training for Reinforcement Learning and Population-Based Methods"
   authors: "Jiale Zhi, Rui Wang, Jeff Clune, Kenneth O. Stanley"
   venue: "arXiv preprint"
   year: 2020
+  image: /assets/images/publications/fiber.png
+  featured: true
   links:
     - name: Paper
       url: https://arxiv.org/abs/2003.11164
     - name: Code
       url: https://github.com/uber/fiber
+    - name: Blog
+      url: https://www.uber.com/blog/fiberdistributed/
+
+- title: "A Hands-On Guide to Distributed Computing Paradigms for Evolutionary Computation"
+  authors: "Rui Wang, Jiale Zhi"
+  venue: "GECCO 2020"
+  year: 2020
+  image: /assets/images/publications/gecco-tutorial.png
+  featured: true
+  links:
+    - name: Paper
+      url: https://dl.acm.org/doi/abs/10.1145/3377929.3389880
 
 - title: "An Atari Model Zoo for Analyzing, Visualizing, and Comparing Deep Reinforcement Learning Agents"
   authors: "Felipe Petroski Such, Vashisht Madhavan, Rosanne Liu, Rui Wang, Pablo Samuel Castro, Yulun Li, Jiale Zhi, Ludwig Schubert, Marc G. Bellemare, Jeff Clune, Joel Lehman"
   venue: "IJCAI 2019"
   year: 2019
+  image: /assets/images/publications/atari-zoo.png
+  featured: true
   links:
     - name: Paper
       url: https://arxiv.org/abs/1812.07069
     - name: Code
       url: https://github.com/uber-research/atari-model-zoo
+    - name: Blog
+      url: https://www.uber.com/blog/atari-zoo-deep-reinforcement-learning/
 
+- title: "PixelBrush: Art Generation from Text with GANs"
+  authors: "Jiale Zhi"
+  venue: "Stanford CS231N"
+  year: 2017
+  image: /assets/images/publications/pixelbrush.png
+  featured: false
+  links:
+    - name: Paper
+      url: https://cs231n.stanford.edu/reports/2017/pdfs/322.pdf
+    - name: Poster
+      url: https://cs231n.stanford.edu/reports/2017/posters/322.pdf
+
+- title: "Creating Page Snapshots"
+  authors: "Jun Li, Xinyang Wang, Jiale Zhi, Qiang Li, Shenguang Ma, Zhihong Zhu"
+  venue: "US Patent App. 14/227,568"
+  year: 2014
+  featured: false
+  links:
+    - name: Patent
+      url: https://patents.google.com/patent/US20150278270A1

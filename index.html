@@ -34,37 +34,40 @@ title: Home
       <li>Deep Learning</li>
       <li>Reinforcement Learning</li>
       <li>Distributed Systems</li>
-      <li>Population-Based Methods</li>
-      <li>Neural Network Analysis</li>
-      <li>ML Infrastructure</li>
     </ul>
   </section>
 
   <section class="section">
     <h2 class="section-title">Selected Publications</h2>
     <ul class="publications-list">
-      {% for pub in site.data.publications limit:3 %}
+      {% for pub in site.data.publications %}
+      {% if pub.featured %}
       <li class="publication-item">
-        <h3 class="publication-title">
-          {% if pub.links[0] %}
-          <a href="{{ pub.links[0].url }}" target="_blank" rel="noopener">{{ pub.title }}</a>
-          {% else %}
-          {{ pub.title }}
-          {% endif %}
-        </h3>
-        <p class="publication-authors">{{ pub.authors }}</p>
-        <p class="publication-venue">{{ pub.venue }}, {{ pub.year }}</p>
-        {% if pub.links %}
-        <div class="publication-links">
-          {% for link in pub.links %}
-          <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.name }}</a>
-          {% endfor %}
-        </div>
+        {% if pub.image %}
+        <img src="{{ pub.image }}" alt="{{ pub.title }}" class="publication-image">
         {% endif %}
+        <div class="publication-content">
+          <h3 class="publication-title">
+            {% if pub.links[0] %}
+            <a href="{{ pub.links[0].url }}" target="_blank" rel="noopener">{{ pub.title }}</a>
+            {% else %}
+            {{ pub.title }}
+            {% endif %}
+          </h3>
+          <p class="publication-authors">{{ pub.authors }}</p>
+          <p class="publication-venue">{{ pub.venue }}, {{ pub.year }}</p>
+          {% if pub.links %}
+          <div class="publication-links">
+            {% for link in pub.links %}
+            <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.name }}</a>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
       </li>
+      {% endif %}
       {% endfor %}
     </ul>
-    <p style="margin-top: 1rem;"><a href="/publications/">View all publications &rarr;</a></p>
   </section>
 
   <section class="section">

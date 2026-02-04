@@ -245,6 +245,8 @@ img {
 }
 
 .publication-item {
+  display: flex;
+  gap: 1.25rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--color-border);
@@ -252,6 +254,19 @@ img {
 
 .publication-item:last-child {
   border-bottom: none;
+}
+
+.publication-image {
+  width: 180px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.publication-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .publication-title {
@@ -594,5 +609,15 @@ img {
 
   .gallery {
     grid-template-columns: 1fr;
+  }
+
+  .publication-item {
+    flex-direction: column;
+  }
+
+  .publication-image {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
   }
 }
