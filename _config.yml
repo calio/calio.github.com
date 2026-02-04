@@ -1,0 +1,64 @@
+# Site settings
+title: Jiale Zhi
+description: ML @ FAIR | ex-Uber AI Labs | ex-Cloudflare
+url: "https://calio.github.io"
+baseurl: ""
+
+# Author
+author:
+  name: Jiale Zhi
+  bio: "ML @ FAIR, ex-Uber AI Labs, ex-Cloudflare"
+  location: San Francisco Bay Area
+  avatar: /assets/images/avatar.jpg
+
+# Social links
+social:
+  twitter: _calio
+  github: calio
+  linkedin: jiale-zhi-48722928
+  scholar: Jkn9ksIAAAAJ
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  math_engine: mathjax
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Collections
+collections:
+  publications:
+    output: false
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+
+# Exclude from build
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .git
+  - README.txt
+  - LICENSE.txt
+  - make.py
+  - _site

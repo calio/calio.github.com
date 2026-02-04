@@ -1,0 +1,36 @@
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-info">
+        <p>&copy; {{ 'now' | date: "%Y" }} {{ site.author.name }}. All rights reserved.</p>
+      </div>
+      <div class="footer-social">
+        {% if site.social.twitter %}
+        <a href="https://x.com/{{ site.social.twitter }}" target="_blank" rel="noopener" aria-label="X/Twitter">
+          <i class="fa-brands fa-x-twitter"></i>
+        </a>
+        {% endif %}
+        {% if site.social.github %}
+        <a href="https://github.com/{{ site.social.github }}" target="_blank" rel="noopener" aria-label="GitHub">
+          <i class="fa-brands fa-github"></i>
+        </a>
+        {% endif %}
+        {% if site.social.linkedin %}
+        <a href="https://www.linkedin.com/in/{{ site.social.linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn">
+          <i class="fa-brands fa-linkedin"></i>
+        </a>
+        {% endif %}
+        {% if site.social.scholar %}
+        <a href="https://scholar.google.com/citations?user={{ site.social.scholar }}" target="_blank" rel="noopener" aria-label="Google Scholar">
+          <i class="fa-brands fa-google-scholar"></i>
+        </a>
+        {% endif %}
+        {% if site.social.email %}
+        <a href="mailto:{{ site.social.email }}" aria-label="Email">
+          <i class="fa-solid fa-envelope"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</footer>

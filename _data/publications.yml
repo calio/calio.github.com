@@ -1,0 +1,27 @@
+- title: "Fiber: A Platform for Efficient Development and Distributed Training for Reinforcement Learning and Population-Based Methods"
+  authors: "Jiale Zhi, Rui Wang, Jeff Clune, Kenneth O. Stanley"
+  venue: "arXiv preprint"
+  year: 2020
+  links:
+    - name: Paper
+      url: https://arxiv.org/abs/2003.11164
+    - name: Code
+      url: https://github.com/uber/fiber
+
+- title: "An Atari Model Zoo for Analyzing, Visualizing, and Comparing Deep Reinforcement Learning Agents"
+  authors: "Felipe Petroski Such, Vashisht Madhavan, Rosanne Liu, Rui Wang, Pablo Samuel Castro, Yulun Li, Jiale Zhi, Ludwig Schubert, Marc G. Bellemare, Jeff Clune, Joel Lehman"
+  venue: "IJCAI 2019"
+  year: 2019
+  links:
+    - name: Paper
+      url: https://arxiv.org/abs/1812.07069
+    - name: Code
+      url: https://github.com/uber-research/atari-model-zoo
+
+- title: "Hyper-Representations: Learning from Populations of Neural Networks"
+  authors: "Konstantin Schürholt, Boris Knyazev, Xavier Giró-i-Nieto, Jiale Zhi, et al."
+  venue: "NeurIPS 2022 Workshop"
+  year: 2022
+  links:
+    - name: Paper
+      url: https://arxiv.org/abs/2203.05861

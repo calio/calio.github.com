@@ -1,0 +1,132 @@
+---
+layout: default
+title: Photography
+permalink: /photography/
+---
+<div class="container">
+  <header class="photography-header">
+    <h1>Photography</h1>
+    <p>Moments captured from my travels around the world</p>
+  </header>
+
+  <div class="gallery">
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/01.jpg')">
+      <img src="/images/thumbs/01.jpg" alt="Sunset">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Sunset</h3>
+        <p class="gallery-item-desc">A small pebble beach by Route 1 in California</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/02.jpg')">
+      <img src="/images/thumbs/02.jpg" alt="Bridge and Lighthouse">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Bridge and Lighthouse</h3>
+        <p class="gallery-item-desc">Point Bonita Lighthouse north of San Francisco</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/03.jpg')">
+      <img src="/images/thumbs/03.jpg" alt="Young wine">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Young Wine</h3>
+        <p class="gallery-item-desc">At a winery in Napa Valley</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/04.jpg')">
+      <img src="/images/thumbs/04.jpg" alt="Not a guitar">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Not a Guitar</h3>
+        <p class="gallery-item-desc">A street musician in Quebec City</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/05.jpg')">
+      <img src="/images/thumbs/05.jpg" alt="Frozen time">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Frozen Time</h3>
+        <p class="gallery-item-desc">Another street musician in Quebec City</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/06.jpg')">
+      <img src="/images/thumbs/06.jpg" alt="Mansion by the sea">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Mansion by the Sea</h3>
+        <p class="gallery-item-desc">The cloudy Quebec City weather gave a unique feeling</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/07.jpg')">
+      <img src="/images/thumbs/07.jpg" alt="Late autumn">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Late Autumn</h3>
+        <p class="gallery-item-desc">A walk down Brussels City</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/08.jpg')">
+      <img src="/images/thumbs/08.jpg" alt="Woman in a church">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Woman in a Church</h3>
+        <p class="gallery-item-desc">At a church in Italy</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/09.jpg')">
+      <img src="/images/thumbs/09.jpg" alt="Gondola">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Gondola</h3>
+        <p class="gallery-item-desc">A day in Venice</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/10.jpg')">
+      <img src="/images/thumbs/10.jpg" alt="Colosseo">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Colosseo</h3>
+        <p class="gallery-item-desc">A day in Rome, I found history</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/11.jpg')">
+      <img src="/images/thumbs/11.jpg" alt="Morning Cremona">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Morning Cremona</h3>
+        <p class="gallery-item-desc">This is how it feels when Antonio Stradivari woke up every morning</p>
+      </div>
+    </div>
+
+    <div class="gallery-item" onclick="openLightbox('/images/fulls/12.jpg')">
+      <img src="/images/thumbs/12.jpg" alt="Underground chamber">
+      <div class="gallery-item-overlay">
+        <h3 class="gallery-item-title">Underground Chamber</h3>
+        <p class="gallery-item-desc">At a winery in Napa Valley</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img src="" alt="" class="lightbox-content" id="lightbox-img">
+  </div>
+</div>
+
+<script>
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+</script>
