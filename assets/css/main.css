@@ -429,7 +429,16 @@ img {
 }
 
 .toc-item {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+
+.toc-h3 {
+  padding-left: 0.75rem;
+}
+
+.toc-h3 .toc-link {
+  font-size: 0.72rem;
+  color: #aaa;
 }
 
 .toc-link {

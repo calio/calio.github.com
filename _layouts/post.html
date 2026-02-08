@@ -55,7 +55,7 @@ layout: default
   var tocSidebar = document.getElementById('toc-sidebar');
   if (!content || !tocList) return;
 
-  var headings = content.querySelectorAll('h2');
+  var headings = content.querySelectorAll('h2, h3');
   if (headings.length === 0) {
     tocSidebar.style.display = 'none';
     return;
