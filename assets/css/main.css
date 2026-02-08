@@ -347,24 +347,61 @@ img {
 /* Single Post */
 .post-wrapper {
   display: flex;
-  max-width: 1060px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 1.5rem;
-  gap: 3rem;
+  gap: 4rem;
 }
 
 /* TOC Sidebar */
 .toc-sidebar {
-  width: 220px;
+  width: 320px;
   flex-shrink: 0;
   padding-top: 6rem;
+  position: relative;
+  transition: width 0.3s ease, margin-left 0.3s ease;
 }
 
 .toc-sidebar .toc {
   position: sticky;
-  top: 2rem;
-  max-height: calc(100vh - 4rem);
+  top: 4.5rem;
+  max-height: calc(100vh - 6rem);
   overflow-y: auto;
+  transition: opacity 0.25s ease;
+}
+
+.toc-sidebar.collapsed {
+  width: 2rem;
+}
+
+.toc-sidebar.collapsed .toc {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toc-collapse-btn {
+  position: sticky;
+  top: 2rem;
+  z-index: 10;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+  transition: color 0.2s;
+  width: fit-content;
+}
+
+.toc-collapse-btn:hover {
+  color: var(--color-text);
+}
+
+.toc-sidebar.collapsed .toc-collapse-btn {
+  margin-bottom: 0;
 }
 
 .toc-sidebar .toc::-webkit-scrollbar {
@@ -392,19 +429,15 @@ img {
 }
 
 .toc-item {
-  margin-bottom: 0.25rem;
-}
-
-.toc-h3 {
-  padding-left: 0.75rem;
+  margin-bottom: 0.35rem;
 }
 
 .toc-link {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
   display: block;
-  padding: 0.15rem 0 0.15rem 0.75rem;
+  padding: 0.2rem 0 0.2rem 0.75rem;
   border-left: 2px solid transparent;
   transition: color 0.2s, border-color 0.2s;
 }
@@ -655,6 +688,10 @@ img {
    ============================================ */
 @media (max-width: 1100px) {
   .toc-sidebar {
+    display: none;
+  }
+
+  .toc-collapse-btn {
     display: none;
   }
 

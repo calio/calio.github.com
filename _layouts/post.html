@@ -4,7 +4,8 @@ layout: default
 <article class="post-page">
   <div class="post-wrapper">
     <aside class="toc-sidebar" id="toc-sidebar">
-      <nav class="toc">
+      <button class="toc-collapse-btn" id="toc-collapse-btn" title="Toggle table of contents">&#9776;</button>
+      <nav class="toc" id="toc-nav">
         <h3 class="toc-title">Table of Contents</h3>
         <ul class="toc-list" id="toc-list"></ul>
       </nav>
@@ -54,7 +55,7 @@ layout: default
   var tocSidebar = document.getElementById('toc-sidebar');
   if (!content || !tocList) return;
 
-  var headings = content.querySelectorAll('h2, h3');
+  var headings = content.querySelectorAll('h2');
   if (headings.length === 0) {
     tocSidebar.style.display = 'none';
     return;
@@ -87,5 +88,12 @@ layout: default
   }, { rootMargin: '0px 0px -80% 0px', threshold: 0 });
 
   headings.forEach(function(heading) { observer.observe(heading); });
+
+  // Collapse to the left
+  var collapseBtn = document.getElementById('toc-collapse-btn');
+  var tocNav = document.getElementById('toc-nav');
+  collapseBtn.addEventListener('click', function() {
+    tocSidebar.classList.toggle('collapsed');
+  });
 })();
 </script>
