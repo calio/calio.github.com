@@ -24,7 +24,10 @@
   padding: 0;
 }
 
-html { font-size: 16px; }
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
 
 body {
   font-family: var(--font-sans);
@@ -342,9 +345,85 @@ img {
 }
 
 /* Single Post */
-.post {
-  max-width: 680px;
+.post-wrapper {
+  display: flex;
+  max-width: 1060px;
   margin: 0 auto;
+  padding: 0 1.5rem;
+  gap: 3rem;
+}
+
+/* TOC Sidebar */
+.toc-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  padding-top: 6rem;
+}
+
+.toc-sidebar .toc {
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+.toc-sidebar .toc::-webkit-scrollbar {
+  width: 3px;
+}
+
+.toc-sidebar .toc::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.toc-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-item {
+  margin-bottom: 0.25rem;
+}
+
+.toc-h3 {
+  padding-left: 0.75rem;
+}
+
+.toc-link {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  display: block;
+  padding: 0.15rem 0 0.15rem 0.75rem;
+  border-left: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.toc-link:hover {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.toc-link.active {
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  font-weight: 500;
+}
+
+.post-main {
+  flex: 1;
+  max-width: 680px;
+  min-width: 0;
 }
 
 .post-header {
@@ -358,6 +437,16 @@ img {
   font-weight: 600;
   margin-bottom: 0.75rem;
   line-height: 1.3;
+}
+
+.post-meta-bar {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.meta-sep {
+  margin: 0 0.5rem;
+  color: var(--color-border);
 }
 
 .post-meta {
@@ -564,6 +653,17 @@ img {
 /* ============================================
    Responsive
    ============================================ */
+@media (max-width: 1100px) {
+  .toc-sidebar {
+    display: none;
+  }
+
+  .post-wrapper {
+    max-width: 720px;
+    gap: 0;
+  }
+}
+
 @media (max-width: 600px) {
   .nav-toggle {
     display: block;

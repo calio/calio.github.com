@@ -1,43 +1,91 @@
 ---
 layout: default
 ---
-<article class="post">
-  <div class="container">
-    <header class="post-header">
-      <h1 class="post-title">{{ page.title }}</h1>
-      <div class="post-meta">
-        <time datetime="{{ page.date | date_to_xmlschema }}">
-          {{ page.date | date: "%B %d, %Y" }}
-        </time>
-        {% if page.categories.size > 0 %}
-        <span class="post-categories">
-          {% for category in page.categories %}
-          <span class="category">{{ category }}</span>
-          {% endfor %}
-        </span>
-        {% endif %}
-      </div>
-    </header>
+<article class="post-page">
+  <div class="post-wrapper">
+    <aside class="toc-sidebar" id="toc-sidebar">
+      <nav class="toc">
+        <h3 class="toc-title">Table of Contents</h3>
+        <ul class="toc-list" id="toc-list"></ul>
+      </nav>
+    </aside>
+    <div class="post-main">
+      <header class="post-header">
+        <h1 class="post-title">{{ page.title }}</h1>
+        <div class="post-meta-bar">
+          {% assign words = content | number_of_words %}
+          {% assign reading_time = words | plus: 199 | divided_by: 200 %}
+          <span>Date: {{ page.date | date: "%B %-d, %Y" }}</span>
+          <span class="meta-sep">|</span>
+          <span>Estimated Reading Time: {{ reading_time }} min</span>
+          <span class="meta-sep">|</span>
+          <span>Author: {{ page.author | default: site.author.name }}</span>
+        </div>
+      </header>
 
-    <div class="post-content">
-      {{ content }}
+      <div class="post-content">
+        {{ content }}
+      </div>
+
+      <footer class="post-footer">
+        <div class="post-nav">
+          {% if page.previous %}
+          <a href="{{ page.previous.url | relative_url }}" class="post-nav-prev">
+            <span>&larr; Previous</span>
+            <span>{{ page.previous.title }}</span>
+          </a>
+          {% endif %}
+          {% if page.next %}
+          <a href="{{ page.next.url | relative_url }}" class="post-nav-next">
+            <span>Next &rarr;</span>
+            <span>{{ page.next.title }}</span>
+          </a>
+          {% endif %}
+        </div>
+      </footer>
     </div>
-
-    <footer class="post-footer">
-      <div class="post-nav">
-        {% if page.previous %}
-        <a href="{{ page.previous.url | relative_url }}" class="post-nav-prev">
-          <span>&larr; Previous</span>
-          <span>{{ page.previous.title }}</span>
-        </a>
-        {% endif %}
-        {% if page.next %}
-        <a href="{{ page.next.url | relative_url }}" class="post-nav-next">
-          <span>Next &rarr;</span>
-          <span>{{ page.next.title }}</span>
-        </a>
-        {% endif %}
-      </div>
-    </footer>
   </div>
 </article>
+
+<script>
+(function() {
+  var content = document.querySelector('.post-content');
+  var tocList = document.getElementById('toc-list');
+  var tocSidebar = document.getElementById('toc-sidebar');
+  if (!content || !tocList) return;
+
+  var headings = content.querySelectorAll('h2, h3');
+  if (headings.length === 0) {
+    tocSidebar.style.display = 'none';
+    return;
+  }
+
+  headings.forEach(function(heading, index) {
+    if (!heading.id) {
+      heading.id = 'heading-' + index;
+    }
+    var li = document.createElement('li');
+    li.className = 'toc-item toc-' + heading.tagName.toLowerCase();
+    var a = document.createElement('a');
+    a.href = '#' + heading.id;
+    a.textContent = heading.textContent;
+    a.className = 'toc-link';
+    li.appendChild(a);
+    tocList.appendChild(li);
+  });
+
+  // Highlight current section on scroll
+  var tocLinks = tocList.querySelectorAll('.toc-link');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(function(link) { link.classList.remove('active'); });
+        var activeLink = tocList.querySelector('a[href="#' + entry.target.id + '"]');
+        if (activeLink) activeLink.classList.add('active');
+      }
+    });
+  }, { rootMargin: '0px 0px -80% 0px', threshold: 0 });
+
+  headings.forEach(function(heading) { observer.observe(heading); });
+})();
+</script>
