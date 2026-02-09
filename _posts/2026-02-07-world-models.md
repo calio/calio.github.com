@@ -293,45 +293,73 @@ Dreamer ([Hafner et al., 2020][4]) keeps the RSSM world model but changes the co
 
 ---
 
-## 2) Planning-centric “value-equivalent” models (MuZero-style)
+## 2) Model-based planning with “value-equivalent” latent dynamics (MuZero-style)
 
-Here the model is trained to be accurate only in **decision-relevant predictions**, not to reconstruct $o_t$.
+MuZero is best viewed as **model-based planning** rather than a (generative) “world model”: it learns an internal dynamics that is accurate only for **decision-relevant predictions** (reward / value / policy), without trying to reconstruct observations.
 
 ### State and dynamics
 
 $$
 \begin{aligned}
-s_0 &= \mathrm{Enc}_\phi(o_{\le t}) \\
-s_{k+1} &= f_\theta(s_k, a_k) \\
-\hat r_k &= \rho_\theta(s_k, a_k), \quad
-\hat v_k = v_\theta(s_k), \quad
-\hat \pi_k = \pi_\theta(s_k)
+s_0 &= h_\phi(o_{\le t}) \\
+(\hat r_{k+1},\, s_{k+1}) &= g_\theta(s_k, a_{t+k}) \\
+(\hat \pi_k,\, \hat v_k) &= f_\theta(s_k)
 \end{aligned}
 $$
 
-No decoder $p(o_t \mid s_t)$ is required.
+Interpretation:
+
+* $s_k$ is a **latent planning state** (deterministic in the original MuZero formulation).
+* $g_\theta$ is the learned **dynamics** (state transition + reward prediction).
+* $f_\theta$ is the learned **prediction head** (policy prior + value prediction).
+
+No decoder $p(o_t \mid s_t)$ is required; the model is *not* trained to be a good pixel simulator.
+
+> Terminology note: $k$ counts **search/unroll steps** inside the model, not environment time steps.
+
+### Acting: search is the policy
+
+At inference time, MuZero does **MCTS in latent space**:
+
+* Start from $s_0=h_\phi(o_{\le t})$.
+* Expand candidate action sequences by repeatedly applying $g_\theta$.
+* Use $f_\theta(s_k)$ to provide a policy prior $\hat\pi_k$ and a leaf value $\hat v_k$.
+* Pick the real environment action $a_t$ from the root visit counts (or an equivalent search policy).
+
+So while $f_\theta$ outputs a policy prior, the *executed* policy is best thought of as:
+*a search procedure guided by learned priors and values.*
 
 ### Training objective (prediction matching across search-unrolled steps)
 
-A typical loss looks like:
+Training matches the model’s unrolled predictions to targets derived from real experience and search:
 
 $$
 \min_{\theta,\phi}
 \sum_{k=0}^K
 \Big(
-\ell_r(\hat r_k, r_{t+k})
-+ \ell_v(\hat v_k, v_{t+k})
+\ell_r(\hat r_{k+1}, r^{\text{target}}_{t+k+1})
++ \ell_v(\hat v_k, v^{\text{target}}_{t+k})
 + \ell_\pi(\hat\pi_k, \pi^{\text{target}}_{t+k})
 \Big)
 $$
 
-### Interpretation under LeCun’s template
+Concretely:
 
-* $\mathrm{Enc}$ exists.
-* $\mathrm{Pred}$ exists.
-* $z_t$ is often **implicit** (stochasticity handled by policy/search + training noise), not an explicit latent.
+* $\pi^{\text{target}}$ is typically the **MCTS-improved policy** (search visit distribution).
+* $v^{\text{target}}$ is an **$n$-step bootstrapped return** (often with value bootstrap at the end of the unroll).
+* $r^{\text{target}}$ is the observed reward along the sampled real trajectory.
 
-**Signature**: *world model = abstract dynamics model optimized for planning targets.*
+### Mapping to LeCun’s $\mathrm{Enc}/\mathrm{Pred}$ template
+
+MuZero fits LeCun’s scaffold cleanly if we treat the latent state as the “world state”:
+
+* **Encoder**: $h_\phi$ plays the role of $\mathrm{Enc}$ and produces the internal state $s_0$ from observations/history.
+* **Predictor**: $\mathrm{Pred}$ is split into
+  * a **dynamics predictor** $g_\theta$ (next-state + reward), and
+  * a **readout** $f_\theta$ (policy prior + value).
+* **Latent noise $z_t$**: usually **not explicit** (the model is typically deterministic; uncertainty is handled implicitly by the policy/value heads + search and the data distribution). You *can* make MuZero stochastic, but it’s not required for the core idea.
+
+**Signature**: *model-based planning = learned latent dynamics optimized for search targets (not observation generation).*
 
 ---
 
