@@ -560,6 +560,70 @@ img {
   border-radius: 4px;
 }
 
+/* Tables */
+.post-content .table-wrapper {
+  overflow-x: auto;
+  margin: 2rem 0;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.post-content .table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.post-content .table-wrapper::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.post-content .table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.post-content table {
+  min-width: 900px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.post-content thead {
+  background: #f7f7f8;
+}
+
+.post-content th {
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.post-content td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.post-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.post-content tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.post-content tbody tr:hover {
+  background: #f0f4ff;
+}
+
 /* MathJax display equations */
 .post-content .MathJax {
   margin: 1.5rem 0;

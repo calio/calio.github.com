@@ -53,7 +53,17 @@ layout: default
   var content = document.querySelector('.post-content');
   var tocList = document.getElementById('toc-list');
   var tocSidebar = document.getElementById('toc-sidebar');
-  if (!content || !tocList) return;
+  if (!content) return;
+
+  // Wrap tables in a scrollable container
+  content.querySelectorAll('table').forEach(function(table) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'table-wrapper';
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
+
+  if (!tocList) return;
 
   var headings = content.querySelectorAll('h2, h3');
   if (headings.length === 0) {
