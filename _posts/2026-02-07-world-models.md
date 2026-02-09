@@ -6,6 +6,160 @@ author: Jiale Zhi
 
 > Disclaimer: this post is far from complete. It reflects my personal view of a small slice of a much bigger and fast-moving literature.
 
+
+There are many different definitions of world models. Basically, a **world model** is an internal model an agent learns to **represent** what it is seeing or perceiving, **predict** how the world or environment will change. This change is often conditioned on actions, but it's not required. The agent then **uses those predictions** to choose actions—via planning, imagination, or policy learning. 
+
+
+## 1) RL refresher: agent ↔ environment, and where “world models” live
+
+Reinforcement learning (RL) is usually framed as an **agent** interacting with an **environment** over time. At each step (t), the environment is in some (often hidden) state (s^{env}*t). The agent receives an observation (x_t) (or (o_t)), chooses an action (a_t), and receives a reward (r_t). The environment then transitions to (s^{env}*{t+1}\sim P(\cdot \mid s^{env}_t,a_t)), and the loop continues.
+
+> **Insert Graphic 1 (existing):** a standard **agent–environment loop** diagram from an RL lecture slide deck (e.g., Stanford CS234).
+> (You can embed a screenshot of the diagram with attribution.)
+
+There are two common mindsets for learning to act in this loop:
+
+* **Model-free RL** learns a policy (\pi(a_t\mid \cdot)) or a value function (Q(\cdot)) directly from experience, without explicitly modeling the environment dynamics.
+* **Model-based RL** additionally learns (or is given) an explicit **environment model**—something that predicts how the world changes—and uses it for **planning**, **imagination**, or to generate extra training data.
+
+The “old-school” conceptual ancestor is the **Dyna** idea: learn from real experience; learn/update a dynamics model; then do “planning updates” using model-generated rollouts as extra experience.
+
+> **Insert Graphic 2 (existing):** a Dyna-style diagram from Sutton’s “planning and learning” slides (or another lecture slide reproducing the Dyna architecture).
+
+This is the slot where “world models” fit: **a world model is, at minimum, a learned model of the environment dynamics that an agent can query to reason about the future.**
+
+---
+
+# 2) “World model” as “modeling the environment”: what exactly gets modeled?
+
+There are many definitions of world models. In this post, I’ll use an operational one:
+
+> A **world model** is an internal model an agent learns to **represent** what it is perceiving and to **predict** how the environment will change. The prediction is often conditioned on actions, but it’s not strictly required (e.g., passive video models). The agent can then use the model for **planning**, **imagination**, or **policy learning**. ([Ha & Schmidhuber, 2018][1])
+
+That “model the environment” idea hides three choices that explain most of the apparent chaos in the literature:
+
+### 2.1 Where do we model the world?
+
+**(a) Pixel / observation space.**
+The most literal option is to predict next observations:
+[
+p(x_{t+1}\mid x_{\le t}, a_{\le t})
+]
+This is expressive and visually interpretable, but expensive and brittle: long-horizon rollouts tend to drift, and predicting every pixel forces the model to care about irrelevant details.
+
+**(b) Latent state space.**
+Instead of predicting pixels, we encode observations into a compact latent state and predict dynamics there:
+[
+x_t \xrightarrow{\text{encode}} s_t \xrightarrow{\text{predict}} s_{t+1}
+]
+Latent modeling is the dominant recipe in “classic” model-based RL (PlaNet/Dreamer-style): it makes rollouts cheaper, supports planning/control more naturally, and often improves sample efficiency.
+
+**(c) Task-relevant / abstract space.**
+Some approaches model only what is needed for decision making (e.g., reward/value/policy), without reconstructing the world visually. These “value-equivalent” models can be strong for planning, but may be harder to interpret as a simulator.
+
+### 2.2 With or without action?
+
+Action-conditioning is the difference between “prediction” and “counterfactual prediction.”
+
+* **Action-conditioned models** aim to learn something like:
+  [
+  p(x_{t+1}\mid x_{\le t}, a_t) \quad \text{or} \quad p(s_{t+1}\mid s_t, a_t)
+  ]
+  so the agent can ask: *what happens if I do (a_t)?*
+
+* **Action-free models** (common in internet video pretraining) learn:
+  [
+  p(x_{t+1}\mid x_{\le t})
+  ]
+  which can look like a “world simulator,” but lacks an explicit intervention handle. A large chunk of modern robotics work is about reintroducing an action channel (via post-training, latent actions, or interactive interfaces).
+
+### 2.3 One-step causal vs whole-trajectory generation?
+
+A subtle but important distinction:
+
+* **Online / causal** world models are trained step-by-step ((t \to t+1)) and naturally support rollouts.
+* **Offline / trajectory models** (e.g., diffusion video generators) may generate an entire future clip at once. They can still be “world-model-like,” but the interface looks different.
+
+---
+
+# 3) Consolidating notation (LeCun + optional Dec) and the policy axis
+
+To avoid definitional drift, I’ll borrow a compact formalization from **LeCun’s Enc/Pred + internal state (s_t) + latent uncertainty (z_t) + action (a_t)** scaffold ([LeCun, 2024][20]). The key idea is to separate **representation**, **dynamics**, and **uncertainty**.
+
+### 3.1 LeCun’s core world-model update
+
+Given observation (x_t), a previous internal state estimate (s_t), an action proposal (a_t), and a latent variable proposal (z_t), a world model computes:
+
+[
+h_t = \mathrm{Enc}(x_t)
+]
+[
+s_{t+1} = \mathrm{Pred}(h_t, s_t, a_t, z_t)
+]
+
+Here:
+
+* (h_t) is an encoded representation of the current observation.
+* (s_t) is the model’s internal state / belief (not necessarily the true env state).
+* (z_t) represents “unknown information” needed to predict the future exactly (occluded variables, stochasticity, multimodality). It’s sampled from a distribution or varied across possibilities.
+* (a_t) is the intervention knob: if present, the model supports counterfactuals.
+
+This already captures an enormous fraction of the literature: different “schools” mostly disagree on (i) what (s_t) should contain, (ii) whether (z_t) is explicit or implicit, and (iii) what training objective anchors the representation.
+
+### 3.2 Add an optional decode step (your unifier for “generative vs non-generative”)
+
+Many world models include (explicitly or implicitly) a decode step:
+
+[
+\hat x_{t+1} = \mathrm{Dec}(s_{t+1})
+]
+
+This turns out to be a clean divider:
+
+* If (\mathrm{Dec}) is trained with reconstruction / likelihood, we’re in a **generative** family (Dreamer-style latent dynamics; video diffusion).
+* If (\mathrm{Dec}) is absent or a no-op, the model is **representation-predictive** (JEPA-style): it predicts future *embeddings* rather than pixels.
+
+Concrete mappings (short, because you’ll expand later):
+
+* **Dreamer:** (\mathrm{Enc}/\mathrm{Dec}) look like a VAE; (\mathrm{Pred}) is a learned latent transition model; training includes reconstruction + latent regularization; policy learns in imagined rollouts. ([Hafner et al., 2020–2025][4][7][8])
+* **JEPA:** (\mathrm{Enc}) produces embeddings; (\mathrm{Pred}) predicts future embeddings; (\mathrm{Dec}) is absent; training must prevent representational collapse. ([Assran et al., 2023][13])
+* **Trajectory diffusion video (Sora-like):** you can treat (\mathrm{Pred}) as producing a *latent trajectory* given context and diffusion noise, and (\mathrm{Dec}) as the latent-to-pixel decoder. This is not stepwise-causal in the same way as Dreamer, but it can still be squeezed into Enc/Pred/Dec at the interface level.
+
+> **Insert Graphic 3 (existing):** OpenAI Sora report figure “Turning visual data into patches” (or the “diffusion transformer” schematic).
+> This is a great visual to introduce “trajectory generation in latent patch space” before you dive into Sora/Genie later.
+
+### 3.3 Policy axis (explicit / implicit / none) and how it interacts with the world model
+
+The above only describes modeling the world. The next question is: **how does an agent use it to act?** There are three common modes:
+
+1. **No policy (pretraining only):** learn (\mathrm{Enc}/\mathrm{Pred}) (and maybe (\mathrm{Dec})) without a controller.
+   Common in representation learning and large-scale video modeling.
+
+2. **Implicit policy (planning = the policy):** choose actions by optimizing rollouts inside the world model:
+   [
+   a_t = \arg\max_a ; \mathbb{E}\left[\sum_{k=0}^{H-1} \gamma^k \hat r_{t+k}\right]
+   ]
+   where rollouts use (s_{t+k+1}=\mathrm{Pred}(\cdot)). This is MPC/CEM-style planning (PlaNet-family).
+
+3. **Explicit policy:** learn a parameterized policy (\pi_\psi(a_t\mid s_t)) and train it using the model (imagination training) or using real experience. This is the Dreamer/World Models 2018 style.
+
+This policy axis will be a recurring theme: the same world model can support different behaviors depending on whether you use **planning**, **imagination training**, **search**, or **post-training distillation**.
+
+---
+
+## What I changed vs your original text (so it matches the new outline)
+
+* **Moved** “Major families of world-model approaches” (World Models/PlaNet/Dreamer/MuZero/SimPLe/Genie/JEPA) out of Sections 1–3. Those belong in your Section 4+ “latent era / JEPA / video simulators / robotics.”
+* **Added** the RL/Dyna setup and the “model the environment” framing explicitly.
+* **Reorganized** your “what can a world model predict?” into the three modeling choices (space, action, time), which tees up LeCun’s notation naturally.
+* **Introduced** your optional (\mathrm{Dec}) step as the clean generative-vs-JEPA bridge.
+
+---
+
+If you want, paste your current **Section 1–3** bibliography keys (what [20] resolves to, plus any RL references you already use), and I can wire the citations cleanly and suggest the **exact page/figure numbers** for the graphics in the PlaNet/Dreamer/I-JEPA PDFs you’re already citing.
+
+
+---
 ## What are "world models"?
 
 There are many different definitions of world models. Basically, a **world model** is an internal model an agent learns to **represent** what it is seeing or perceiving, **predict** how the world or environment will change. This change is often conditioned on actions, but it's not required. The agent then **uses those predictions** to choose actions—via planning, imagination, or policy learning. The framing is explicitly inspired by how humans rely on simplified internal models rather than raw sensory streams. ([Ha & Schmidhuber, 2018][1])
