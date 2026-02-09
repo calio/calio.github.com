@@ -219,7 +219,7 @@ $$
 
 (Here $h_t$ is just the encoder features of $o_t$.)
 
-> Note: earlier in the World Models (2018) deep dive, I used $h_t$ for the RNN hidden state (“memory”). In this generic family-level template, $h_t$ means *encoder features*. In the comparison below I’ll write the World Models RNN memory as $m_t$ to avoid symbol overload.
+> Note: in the World Models (2018) deep dive, $h_t$ was an RNN hidden state (“memory”). In this family-level template, $h_t$ is *encoder features*. Below I’ll write the World Models RNN memory as $m_t$.
 
 In **RSSM/Dreamer**, $s_t$ usually splits into deterministic memory $d_t$ and stochastic latent $z_t$:
 
@@ -227,54 +227,28 @@ $$
 d_{t+1} = g_\theta(d_t, z_t, a_t), \qquad z_t \sim p_\theta(z_t \mid d_t, a_{t-1})
 $$
 
-### Mapping to LeCun’s $\mathrm{Enc}/\mathrm{Pred}$ scaffold (PlaNet/RSSM, Dreamer)
+### Mapping to LeCun’s $\mathrm{Enc}/\mathrm{Pred}$ scaffold (RSSM, PlaNet, Dreamer)
 
-LeCun’s template in this post is:
+In LeCun’s notation, we have an encoder plus a predictor:
 
 * $h_t = \mathrm{Enc}_\phi(o_t)$
 * $s_{t+1} = \mathrm{Pred}_\theta(s_t, h_t, a_t, z_t)$
 
-RSSM-based methods (PlaNet, Dreamer) fit this neatly if you interpret the “world-state” as the *belief state* $s_t=(d_t, z_t)$:
+RSSM-based methods (PlaNet, Dreamer) fit this directly by taking the LeCun “world-state” $s_t$ to be a **belief state** with a deterministic part and a stochastic part:
 
-| LeCun symbol | RSSM / PlaNet / Dreamer instantiation |
-|---|---|
-| Observation $o_t$ | input image (pixels) and optionally other sensors |
-| Action $a_t$ | environment action (discrete/continuous control) |
-| Encoder output $h_t$ | CNN features $h_t = \mathrm{Enc}_\phi(o_t)$ |
-| World-state $s_t$ | belief state; typically $s_t = (d_t, z_t)$ |
-| Stochastic latent $z_t$ | the stochastic part of the belief (uncertainty/multimodality); in practice there is a prior $p(z_{t+1}\mid d_{t+1})$ and a posterior $q(z_t\mid h_t, d_t)$ |
-| Predictor $\mathrm{Pred}_\theta$ | one-step latent transition that updates memory and samples the next stochastic latent:
-  - $d_{t+1}=g_\theta(d_t, z_t, a_t)$
-  - $z_{t+1}\sim p_\theta(z_{t+1}\mid d_{t+1})$
-  - (optionally) decode $o_t$ and predict reward/value from $s_t$ |
+* $s_t = (d_t, z_t)$ where $d_t$ is memory and $z_t$ is uncertainty.
 
-Two practical notes when reading papers through this lens:
+One predictor step is then (conceptually) “update memory, then sample uncertainty”:
 
-* **Why both $h_t$ and $z_t$ show up**: $h_t$ anchors the belief in the current observation; $z_t$ is the model’s stochastic “choice” that makes rollouts diverse.
-* **Planning vs policy is *outside* the world model**: PlaNet uses an optimizer/search to choose $a_t$ by querying $\mathrm{Pred}_\theta$; Dreamer learns an actor $\pi_\psi(a_t\mid s_t)$ that outputs $a_t$ directly.
+* $d_{t+1}=g_\theta(d_t, z_t, a_t)$
+* $z_{t+1}\sim p_\theta(z_{t+1}\mid d_{t+1})$
 
-### What “latent-dynamics” means here
+During training there is also a posterior (filter) that infers $z_t$ from $(h_t,d_t)$; I’ll skip ELBO details.
 
-The common recipe is: learn a **compact latent state** that is *predictable* under actions but still *grounded* in observations.
+Finally, **how actions are chosen is a separate layer on top of the world model**:
 
-At a high level, these methods contain four moving pieces:
-
-1. **Representation**: an encoder $h_t = \mathrm{Enc}(o_t)$ that summarizes the current observation.
-2. **Belief / latent state**: a recurrent internal state $s_t$ that carries history.
-3. **Stochasticity**: a latent $z_t$ injected into the transition to represent uncertainty / multimodality.
-4. **Rollouts for control**: the model is unrolled forward under candidate actions to support planning or policy learning.
-
-In RSSM-style models, it’s useful to think of the state as $s_t = (d_t, z_t)$:
-
-* $d_t$ = deterministic memory (what the model “remembers”).
-* $z_t$ = stochastic latent (what the model is “unsure” about).
-
-Then one step of an RSSM-like dynamics has two parts:
-
-* deterministic update: $d_{t+1} = g(d_t, z_t, a_t)$
-* stochastic update: $z_{t+1} \sim p(z_{t+1} \mid d_{t+1})$  (a learned prior)
-
-During training, $z_t$ is typically inferred from $(h_t, d_t)$ via a learned posterior (filter). I’ll skip ELBO mechanics and stick to the practical differences you care about: *what is encoded, what is predicted, and how actions are produced*.
+* **PlaNet**: choose $a_t$ by planning/search (MPC/CEM) that queries $\mathrm{Pred}_\theta$.
+* **Dreamer**: learn an actor $\pi_\psi(a_t\mid s_t)$ inside imagined rollouts, then act with one forward pass.
 
 ### Comparison (World Models 2018 vs PlaNet vs Dreamer)
 
@@ -293,30 +267,6 @@ These three are closely related in *spirit* (latent rollouts for control), but t
 | Behavior learning signal | Evolution strategy over controller params. | Planning objective (predicted return) solved at inference time. | Actor-critic gradients through imagined trajectories (plus value bootstrapping). |
 | Runtime compute | Low. | High (many model rollouts per env step). | Low (one actor forward pass; optional value). |
 
-**Rule of thumb**
-
-* PlaNet = **learn model + plan online**.
-* Dreamer = **learn model + learn a fast policy in imagination**.
-* World Models (2018) = **learn model + optimize a tiny controller inside dreams**.
-
-### Algorithm sketches (how the model gets used)
-
-These are intentionally “one-screen” summaries (details live in the original papers).
-
-**PlaNet (MPC with CEM)**
-
-1. Given current belief state $s_t$, initialize a distribution over action sequences $a_{t:t+H-1}$.
-2. Sample $N$ candidate sequences; roll each forward in the RSSM for $H$ steps.
-3. Score each sequence by predicted return $\sum_{k=0}^{H-1}\gamma^k\hat r_{t+k}$.
-4. Keep top-$K$ elites; refit the sampling distribution; repeat a few iterations.
-5. Execute the first action of the best sequence; move to $t{+}1$ and replan.
-
-**Dreamer (imagination training)**
-
-1. Collect real experience; update the RSSM (encoder + dynamics + reward/obs heads).
-2. Start from real posterior states; unroll imagined trajectories using the actor $\pi_\psi$.
-3. Train value and actor on imagined returns (with bootstrapping), then act in the real environment with the actor.
-
 ### Quick takeaways
 
 * **Same conceptual backbone**: stochastic latent dynamics + latent rollouts for decision-making.
@@ -325,25 +275,19 @@ These are intentionally “one-screen” summaries (details live in the original
 
 ### PlaNet (2019): learn an RSSM, then plan with MPC
 
-PlaNet ([Hafner et al., 2019][3]) is a planning-first recipe: **learn a latent dynamics model from pixels**, then do **online planning** in that latent space.
+PlaNet ([Hafner et al., 2019][3]) is the planning-first instantiation of the RSSM idea:
 
-* **World model (RSSM)**: keep a deterministic memory (e.g. $d_t$) to summarize history, plus a stochastic latent $z_t$ to represent uncertainty. From the internal state, predict both **reconstructions** (or features) of observations and **rewards**.
-* **Training**: fit the model on real trajectories so that (i) the latent state explains observations (via a decoder / observation head) and (ii) the predicted latent dynamics match what actually happens in the data.
-* **Control (MPC)**: at each real time step, search over candidate action sequences $a_{t:t+H-1}$, roll them forward in the learned model for $H$ steps, score them by predicted cumulative reward, execute only the first action, then replan.
-  - In practice, PlaNet uses a sampling-based optimizer (e.g. CEM): iteratively sample action sequences, keep the elites, refit the sampling distribution, repeat.
+* **Model**: learn an RSSM belief state $s_t=(d_t,z_t)$ from pixels and predict rewards from $s_t$.
+* **Action selection**: use **online MPC** (typically CEM) to choose the next action by rolling the RSSM forward under candidate action sequences.
 
-The key conceptual point: in PlaNet, **the planner *is* the policy** (there’s no separately trained neural controller that outputs actions in one forward pass).
+The key conceptual point: in PlaNet, **the planner *is* the policy**.
 
 ### Dreamer (2020): replace online planning with a learned actor-critic
 
-Dreamer ([Hafner et al., 2020][4]) uses a very similar latent world model (RSSM), but changes how actions are chosen:
+Dreamer ([Hafner et al., 2020][4]) keeps the RSSM world model but changes the control layer:
 
-* Instead of replanning with CEM at every environment step, Dreamer trains an explicit **actor** $\pi_\psi(a_t\mid s_t)$ and **value/reward** heads *inside the latent imagination*.
-* The training loop alternates between:
-  1) update the world model from real experience, then
-  2) generate imagined rollouts in latent space and update the actor/value using those trajectories.
-
-So PlaNet is “**learn model + plan online**,” while Dreamer is “**learn model + learn a fast policy/value from imagination**.”
+* **Instead of planning with CEM every step**, train an explicit actor $\pi_\psi(a_t\mid s_t)$ and value function using imagined rollouts inside the RSSM.
+* At runtime, actions come from the actor (amortized control), which is much cheaper than per-step planning.
 
 **Signature**: *world model = probabilistic simulator (in latent), trained generatively.*
 
