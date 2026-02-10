@@ -4,9 +4,9 @@ date: 2026-02-07
 author: Jiale Zhi
 ---
 
-math notations:
-
-$x_t$: observations
+TODO:
+* fix figure width
+* remove some of the bold texts
 
 > Disclaimer: this post is far from complete. It reflects my personal view of a small slice of a much bigger and fast-moving literature.
 
@@ -16,32 +16,32 @@ A **world model** is an internal model an agent learns to represent what it is p
 
 ## RL refresher: agent, environment, and where “world models” live
 
-Reinforcement learning (RL) is usually framed as an **agent** interacting with an **environment** over time. At each step $t$, the environment is in some (often hidden) state $$s^{\mathrm{env}}_t$$. The agent receives an observation $x_t$, chooses an action $a_t$, and receives a reward $r_t$. The environment then transitions to $s^{\mathrm{env}}_{t+1} \sim P(\cdot \mid s^{\mathrm{env}}_t, a_t)$, and the loop continues.
+In reinforcement learning (RL), an **agent** interacts with an **environment** over time. At step $t$, the environment is in some (often hidden) state $$s^{\mathrm{env}}_t$$. The agent receives an observation $x_t$, chooses an action $a_t$, and receives a reward $r_t$. The environment then transitions to $s^{\mathrm{env}}_{t+1} \sim P(\cdot \mid s^{\mathrm{env}}_t, a_t)$.
 
 ![Agent–environment interaction loop: the agent observes state, selects an action, receives a reward, and the environment transitions to a new state](https://www.altexsoft.com/static/blog-post/2023/11/345fadfa-549a-462a-b757-9ab258e747f3.webp)
 
-*Figure: The agent–environment loop (source: Sutton & Barto, Introduction to Reinforcement Learning).*
+*Figure: The agent–environment loop (illustration source: AltexSoft).*
 
 Two common approaches to learning behavior in this loop:
 
 * **Model-free RL** learns a policy $\pi(a_t\mid \cdot)$ or a value function $Q(\cdot)$ directly from experience, without explicitly modeling the environment dynamics.
 * **Model-based RL** additionally learns (or is given) an explicit **environment model**, something that predicts how the world changes—and uses it for **planning**, **imagination**, or to generate extra training data.
 
-An influential template is **Dyna**: learn from real experience, learn/update a dynamics model, and do extra updates using **model-generated rollouts** (“simulated experience”).
+An influential template is **Dyna**: learn from real experience, learn/update a dynamics model, and do extra updates using **model-generated rollouts** (“simulated experience”). ([Sutton & Barto, 2018][21])
 
 ![Dyna-style model-based RL loop (from Sutton & Barto): real experience trains the model; the model produces simulated experience for planning updates; both update policy/value](/assets/images/world-models/dyna-architecture.png)
 
-*Figure: Dyna-style loop (real experience → model learning → simulated experience → planning update), adapted from Sutton & Barto, Reinforcement Learning: An Introduction.*
+*Figure: Dyna-style loop (real experience → model learning → simulated experience → planning update), adapted from Sutton & Barto, Reinforcement Learning: An Introduction.* ([Sutton & Barto, 2018][21])
 
 This shows where “world models” live: **a learned dynamics model the agent can query** (for planning, imagination, or policy learning).
 
----
-
 ## What exactly gets modeled?
 
-There are many definitions of world models. Here I’ll keep it practical: most of the differences in the literature come down to three design choices.
+In practice, a “world model” is defined less by a specific architecture and more by an interface: given what the agent has seen (and optionally what it does), the model produces a prediction of what comes next.
 
-### 2.1 Where do we model the world?
+Across the literature, most differences boil down to a few recurring design choices that determine (i) what the model is asked to predict, (ii) whether it supports counterfactual *interventions*, and (iii) what kind of rollouts it can be used for.
+
+### Where do we model the world?
 
 **(a) Pixel / observation space.**
 The most literal option is to predict next observations:
@@ -60,111 +60,40 @@ Latent modeling is the dominant recipe in “classic” model-based RL (PlaNet/D
 **(c) Task-relevant / abstract space.**
 Some approaches model only what is needed for decision making (e.g., reward/value/policy), without reconstructing the world visually. These “value-equivalent” models can be strong for planning, but may be harder to interpret as a simulator.
 
-### 2.2 With or without action?
+### With or without action?
 
 Action-conditioning is the difference between “prediction” and “counterfactual prediction.”
 
 * **Action-conditioned models** aim to learn something like:
   $$
-  p(x_{t+1}\mid x_{\le t}, a_t) \quad \text{or} \quad p(s_{t+1}\mid s_t, a_t)
+  p(x_{t+1}\mid x_{\le t}, a_t) \;\text{or}\; p(s_{t+1}\mid s_t, a_t)
   $$
   so the agent can ask: *what happens if I do $a_t$?*
 
-* **Action-free models** (common in internet video pretraining) learn:
+* **Action-free models** (common in internet video pretraining and video generation) learn:
   $$
   p(x_{t+1}\mid x_{\le t})
   $$
   which can look like a “world simulator,” but lacks an explicit intervention handle. A large chunk of modern robotics work is about reintroducing an action channel (via post-training, latent actions, or interactive interfaces).
 
-### 2.3 One-step causal vs whole-trajectory generation?
+### One-step causal vs whole-trajectory generation?
 
 A subtle but important distinction:
 
 * **Online / causal** world models are trained step-by-step $(t \to t+1)$ and naturally support rollouts.
 * **Offline / trajectory models** (e.g., diffusion video generators) may generate an entire future clip at once. They can still be “world-model-like,” but the interface looks different.
 
----
+In practice, stepwise models fit planning/control loops because they let you branch on candidate actions and replan; trajectory models are closer to open-loop generation unless you add an action-conditioned, closed-loop interface.
 
-## 3) Consolidating notation (LeCun + optional Dec) and the policy axis
-
-To keep notation consistent, I’ll use LeCun’s Enc/Pred scaffold: representation, dynamics, and (optional) uncertainty.
-
-### 3.1 LeCun’s core world-model update
-
-Given observation $x_t$, a previous internal state estimate $s_t$, an action proposal $a_t$, and a latent variable proposal $z_t$, a world model computes:
-
-$$
-h_t = \mathrm{Enc}(x_t)
-$$
-$$
-s_{t+1} = \mathrm{Pred}(h_t, s_t, a_t, z_t)
-$$
-
-Here:
-
-* $h_t$ is an encoded representation of the current observation.
-* $s_t$ is the model’s internal state / belief (not necessarily the true env state).
-* $z_t$ represents “unknown information” needed to predict the future exactly (occluded variables, stochasticity, multimodality). It’s sampled from a distribution or varied across possibilities.
-* $a_t$ is the intervention knob: if present, the model supports counterfactuals.
-
-Different “schools” mostly disagree on what $s_t$ should contain, whether $z_t$ is explicit, and what objective anchors the representation.
-
-### 3.2 Add an optional decode step (your unifier for “generative vs non-generative”)
-
-Many world models include (explicitly or implicitly) a decode step:
-
-$$
-\hat x_{t+1} = \mathrm{Dec}(s_{t+1})
-$$
-
-This gives a useful divider:
-
-* If $\mathrm{Dec}$ is trained with reconstruction / likelihood, we’re in a **generative** family (Dreamer-style latent dynamics; video diffusion).
-* If $\mathrm{Dec}$ is absent or a no-op, the model is **representation-predictive** (JEPA-style): it predicts future *embeddings* rather than pixels.
-
-Concrete mappings (short, because you’ll expand later):
-
-* **Dreamer:** $\mathrm{Enc}/\mathrm{Dec}$ look like a VAE; $\mathrm{Pred}$ is a learned latent transition model; training includes reconstruction + latent regularization; policy learns in imagined rollouts. ([Hafner et al., 2020–2025][4][7][8])
-* **JEPA:** $\mathrm{Enc}$ produces embeddings; $\mathrm{Pred}$ predicts future embeddings; $\mathrm{Dec}$ is absent; training must prevent representational collapse. ([Assran et al., 2023][13])
-* **Trajectory diffusion video (Sora-like):** you can treat $\mathrm{Pred}$ as producing a *latent trajectory* given context and diffusion noise, and $\mathrm{Dec}$ as the latent-to-pixel decoder. This is not stepwise-causal in the same way as Dreamer, but it can still be squeezed into Enc/Pred/Dec at the interface level.
-
-![Vision Transformer: an image is split into patches, linearly embedded, combined with positional encodings, and processed by a Transformer encoder](/assets/images/world-models/vision-transformer.png)
-
-*Figure: Turning visual data into patches. An image is divided into fixed-size patches, each linearly embedded into a token. This patch-based tokenization—originally from ViT (Dosovitskiy et al., 2020)—is the same idea Sora and similar video world models extend to spacetime patches for trajectory generation in latent space.*
-
-### 3.3 Policy axis (explicit / implicit / none) and how it interacts with the world model
-
-The above only describes modeling the world. The next question is: **how does an agent use it to act?** There are three common modes:
-
-1. **No policy (pretraining only):** learn $\mathrm{Enc}/\mathrm{Pred}$ (and maybe $\mathrm{Dec}$) without a controller.
-   Common in representation learning and large-scale video modeling.
-
-2. **Implicit policy (planning = the policy):** choose actions by optimizing rollouts inside the world model:
-  $$
-  a_t = \arg\max_a\; \mathbb{E}\left[\sum_{k=0}^{H-1} \gamma^k \hat r_{t+k}\right]
-  $$
-  where rollouts use $s_{t+k+1}=\mathrm{Pred}(\cdot)$. This is MPC/CEM-style planning (PlaNet-family).
-
-3. **Explicit policy:** learn a parameterized policy $\pi_\psi(a_t\mid s_t)$ and train it using the model (imagination training) or using real experience. This is the Dreamer/World Models 2018 style.
-
-This policy axis will be a recurring theme: the same world model can support different behaviors depending on whether you use **planning**, **imagination training**, **search**, or **post-training distillation**.
-
----
-
----
-
----
 ## What are "world models"?
 
-I’m using the operational definition at the top of the post. Here I’ll make it concrete with a unifying notation (LeCun’s Enc/Pred scaffold) and then use that to organize the rest of the literature.
-
-Mathematically, I'll borrow the definition from **LeCun's Enc/Pred + state $s_t$ + latent $z_t$ + action $a_t$** scaffold ([LeCun, 2024][20]), and then show how each "school" is just a different choice of **state definition**, **stochasticity placement**, and **training objective**.
+I’ll use the operational definition at the top of the post, but make it concrete with a unifying notation based on LeCun’s Enc/Pred scaffold ([LeCun, 2024][20]). This lets us organize the literature as variations in the choice of internal state $s_t$, where stochasticity enters (via $z_t$), whether the dynamics are action-conditioned, and the training objective.
 
 I’ll keep notation consistent:
 
-* Observation $o_t$ (image/video frame, proprioception, text token, etc.)
+* Observation $x_t$ (image/video frame, proprioception, text token, etc.)
 * Action $a_t$ (optional)
-* Encoder $h_t = \mathrm{Enc}_\phi(o_t)$
+* Encoder $h_t = \mathrm{Enc}_\phi(x_t)$
 * World-state $s_t$ (model's internal state / belief)
 * Stochastic latent $z_t \sim p_\theta(z_t \mid \cdot)$ (captures uncertainty / multimodality)
 * Predictor $s_{t+1} = \mathrm{Pred}_\theta(h_t, s_t, a_t, z_t)$
@@ -172,16 +101,163 @@ I’ll keep notation consistent:
 A “world model” is then a learned transition model that supports **counterfactual rollouts** under proposed actions.
 
 
-In practice, “world model” can mean a few related things:
-
-* **A generative/predictive simulator**: learn $p(o_{t+1} \mid o_t, a_t)$ or (more commonly) $p(z_{t+1} \mid z_t, a_t)$ in a latent space.
-* **A latent state-space model**: infer a compact hidden state $z_t$ that summarizes the past, then predict transitions and rewards in that space.
-* **A planning-centric model**: predict *only* what’s needed for planning (reward/value/policy), not necessarily pixels (MuZero-style).
-* **A foundation “world” generator**: large video/3D-like interactive models that produce consistent, navigable environments from prompts (Genie/Genie 3).
-
 The unifying idea: **learn a model of the environment**, then **use it to improve decision-making**—often with much better sample-efficiency than purely model-free RL.
 
 
+## Latent dynamics: learned state-space models
+
+The latent-dynamics line of work starts from a practical observation: predicting in raw pixel space is expensive and brittle, while predicting in a compact latent state can be both easier and more useful for control. The shared recipe is
+
+$$
+x_t \xrightarrow{\mathrm{Enc}} s_t \xrightarrow{\mathrm{Pred}} s_{t+1}
+$$
+
+where $s_t$ is a learned belief state (the agent’s internal state) that can be rolled forward under candidate actions.
+
+### A minimal formal template
+
+A convenient abstraction for this family is a stochastic latent state-space model with an observation model and reward model:
+
+$$
+\begin{aligned}
+h_t &= \mathrm{Enc}(x_t) \\
+z_t &\sim p_\theta(z_t \mid s_t, a_t) \\
+s_{t+1} &= f_\theta(s_t, a_t, z_t) \\
+x_t &\sim p_\theta(x_t \mid s_t) \\
+r_t &\sim p_\theta(r_t \mid s_t, a_t)
+\end{aligned}
+$$
+
+Here $x_t$ denotes the observation (some papers write $o_t$). Intuitively:
+
+* $h_t = \mathrm{Enc}(x_t)$: encode the current observation into a feature/latent used by the dynamics.
+* $z_t \sim p_\theta(z_t\mid s_t,a_t)$: sample a stochastic “innovation” term (optional) to represent uncertainty/multimodal next states.
+* $s_{t+1} = f_\theta(s_t,a_t,z_t)$: roll the internal state forward under the candidate action.
+* $x_t \sim p_\theta(x_t\mid s_t)$: (optional) decode/reconstruct observations from state for representation learning and debugging.
+* $r_t \sim p_\theta(r_t\mid s_t,a_t)$: (optional) predict reward (and often termination/discount) for planning/control.
+
+Here $p_\theta(\cdot\mid\cdot)$ denotes learned conditional distributions parameterized by $\theta$; in practice these are neural heads that output distribution parameters (e.g., Gaussian moments or categorical logits).
+
+Not every “world model” instantiates every head: Dreamer/PlaNet-style models usually learn both an observation decoder $p_\theta(x_t\mid s_t)$ and a reward model $p_\theta(r_t\mid s_t,a_t)$; MuZero-style models often skip pixel prediction entirely and instead model reward/value/policy in an abstract state.
+
+Individual papers differ in how they parameterize $s_t$, where they place stochasticity, and how actions are selected from the model’s rollouts.
+
+### World Models (2018): explicit latents and explicit memory
+
+*World Models* (Ha & Schmidhuber, 2018) is a canonical example of the “compress → predict → control” pattern: learn a latent simulator, then optimize a controller inside the model’s imagined rollouts. ([Ha & Schmidhuber, 2018][1])
+
+![World Models (2018) overall architecture: VAE (V) compresses frames to latents, MDN-RNN (M) predicts next-latent distributions, controller (C) acts on latent + RNN hidden state](/assets/images/world-models/world-models-2018-architecture.png)
+
+*Figure: Overall architecture (VAE $\to$ MDN-RNN $\to$ controller) (source: [Ha & Schmidhuber, 2018][1]).*
+
+To keep notation consistent with the rest of this post, I’ll write observations as $x_t$ (the paper uses $o_t$). The model is modular:
+
+* **V (Vision, VAE)** compresses each observation into a per-step latent $z^{\mathrm{VAE}}_t$.
+* **M (Memory/dynamics, MDN-RNN)** maintains a recurrent memory state $m_t$ and predicts a *distribution* over the next latent.
+* **C (Controller)** maps the current latent and memory to an action.
+
+One way to write the core loop is:
+
+$$
+\begin{aligned}
+z^{\mathrm{VAE}}_t &= \mathrm{Enc}^{\mathrm{VAE}}_\phi(x_t) \\
+m_{t+1} &= \mathrm{RNN}_\theta(m_t, z^{\mathrm{VAE}}_t, a_t) \\
+z^{\mathrm{VAE}}_{t+1} &\sim p_\theta\big(z^{\mathrm{VAE}}_{t+1}\mid m_{t+1}\big) \\
+a_t &= \mathrm{C}_\psi\big([z^{\mathrm{VAE}}_t,\, m_t]\big)
+\end{aligned}
+$$
+
+where $p_\theta(z^{\mathrm{VAE}}_{t+1}\mid m_{t+1})$ is implemented as a mixture-density head (MDN), which makes the latent dynamics explicitly stochastic.
+
+In the Enc/Pred scaffold ([20]), a clean identification is:
+
+$$
+h_t = z^{\mathrm{VAE}}_t,\quad s_t = m_t,\quad z_t = \xi_t
+$$
+
+where $\xi_t$ denotes the sampling randomness used to select a particular next latent from the MDN distribution. Written to mirror the “innovation” view in the minimal template above, one predictor step can be written as
+
+$$
+\begin{aligned}
+m_{t+1} &= \mathrm{RNN}_\theta(m_t, h_t, a_t) \\
+z^{\mathrm{VAE}}_{t+1} &= \mathrm{Sample}\big(p_\theta(\cdot\mid m_{t+1}), \xi_t\big)
+\end{aligned}
+$$
+
+Two clarifications that matter for reading later work:
+
+* The learned dynamics are in latent space; the VAE decoder is mostly used for reconstruction/visualization rather than being the “thing you plan in.”
+* The original paper does not learn an explicit reward model; reward is only used when optimizing the controller. Many later latent-dynamics agents add reward/termination heads to make planning/imagined learning more direct.
+
+The key conceptual point is that the “world model” is explicitly probabilistic: it represents a distribution over plausible next latents, which is important under partial observability and multimodal futures. ([Ha & Schmidhuber, 2018][1])
+
+### PlaNet: RSSM belief state and planning as action selection
+
+PlaNet ([3]) refines the state definition via a Recurrent State-Space Model (RSSM) belief state that splits into deterministic memory $d_t$ and stochastic latent $z_t$. The core transition can be written as:
+
+$$
+\begin{aligned}
+d_{t+1} &= g_\theta(d_t, z_t, a_t) \\
+z_{t+1} &\sim p_\theta(z_{t+1}\mid d_{t+1})
+\end{aligned}
+$$
+
+The rolled state for prediction is $s_t=(d_t,z_t)$. When a new observation arrives, the model maintains a posterior update $q(z_{t+1}\mid d_{t+1}, x_{t+1})$; the details are typically trained with a variational objective, but the interface is simply “belief update, then rollout.”
+
+Action selection in PlaNet is performed by online planning over action sequences using imagined rollouts in the RSSM. If the model predicts rewards $\hat r_t = R_\theta(s_t, a_t)$, then for a horizon $H$:
+
+$$
+a_{t:t+H-1}^* = \arg\max_{a_{t:t+H-1}}
+\mathbb{E}\left[\sum_{k=0}^{H-1}\gamma^k\, \hat r_{t+k}\right]
+$$
+
+where the expectation is taken over the stochastic latents encountered during rollout. PlaNet executes the first action $a_t^*$ and replans at the next step. ([Hafner et al., 2019][3])
+
+> **Insert graphic (existing):** PlaNet latent dynamics model designs (deterministic vs stochastic vs RSSM). ([Hafner et al., 2019][3])
+
+### Dreamer: imagination-based actor-critic in latent rollouts
+
+Dreamer ([4]) keeps an RSSM world model but changes the control layer from online planning to a learned actor and critic trained inside imagined rollouts. The learned policy is explicit:
+
+$$
+a_t \sim \pi_\psi(\cdot \mid s_t)
+$$
+
+and the rollout distribution is provided by the learned dynamics:
+
+$$
+s_{t+1} \sim p_\theta(\cdot \mid s_t, a_t)
+$$
+
+The actor is trained to maximize predicted return under imagined trajectories:
+
+$$
+\max_\psi\;\mathbb{E}_{\pi_\psi,\,p_\theta}
+\left[\sum_{k=0}^{H-1}\gamma^k\, \hat r_{t+k}\right]
+$$
+
+This gives a clean formal distinction within the same latent-dynamics family:
+
+* PlaNet performs online optimization over action sequences (compute-heavy at inference time).
+* Dreamer amortizes action selection into a policy network (compute-light at inference time). ([Hafner et al., 2020][4])
+
+DreamerV2 introduces discrete latent representations and targets strong Atari performance. ([Hafner et al., 2021][6]) DreamerV3 emphasizes robustness across diverse domains with fixed hyperparameters. ([Hafner et al., 2023][7]) Dreamer 4 scales the same coupling pattern to larger settings. ([Hafner et al., 2025][8])
+
+> **Insert graphic (existing):** Dreamer overview of “learn world model, imagine, learn actor/critic.” ([Hafner et al., 2020][4])
+
+### Invariants of the latent-dynamics family
+
+Across World Models, PlaNet, and Dreamer, two invariants recur:
+
+* The world model is a latent stochastic dynamical system that can be rolled forward under candidate actions.
+* The agent differs mainly in how it chooses actions using the model: black-box optimization of a controller in dreamed rollouts (World Models), online planning via rollouts (PlaNet), or explicit actor-critic learning in imagined rollouts (Dreamer).
+
+
+---
+
+---
+
+---
 ## What can a "world model" predict?
 
 Here's a practical way to classify approaches:
@@ -213,16 +289,16 @@ Here's a practical way to classify approaches:
 
 It’s useful to read the literature as a few recurring families, rather than as a single line of progress.
 
-### 1) World Models (2018): compress → predict → control
+### World Models (2018): compress → predict → control
 
 *World Models* (Ha & Schmidhuber, 2018) popularized a clean, modular recipe—**compress → predict → control**—and the idea of training a controller *inside the model's own "dream"* before deploying in the real environment. ([Ha & Schmidhuber, 2018][1])
 
-### 2) Latent dynamics models for planning: PlaNet
+### Latent dynamics models for planning: PlaNet
 
 **PlaNet** (Hafner et al.) is an early landmark for planning directly in a learned latent space. It uses a latent dynamics model with **both deterministic and stochastic** transition components and performs online planning in latent space. ([Hafner et al., 2019][3])
 
 
-### 3) "Imagination training" with actor-critic: Dreamer → DreamerV2/V3 → Dreamer 4
+### "Imagination training" with actor-critic: Dreamer → DreamerV2/V3 → Dreamer 4
 
 **Dreamer** made “learn in latent imagination” a core, scalable strategy: it learns behaviors **purely by latent imagination** and propagates value gradients back through imagined trajectories. ([Hafner et al., 2020][4])
 Google’s blog summary also describes Dreamer as a model-based pipeline of (1) learning the world model, (2) learning behaviors from predictions, (3) acting to collect more experience. ([Hafner et al., 2020][4])
@@ -234,7 +310,7 @@ After the original Dreamer paper, there are a few follow up work:
 * **Dreamer 4 (2025)** pushes scale and complexity: it frames “imagination training” in a more scalable setting (Minecraft), emphasizing accurate object interactions and even reporting a diamond-acquisition challenge from offline data. ([Hafner et al., 2025][8])
 
 
-### 4) Planning-centric, non-pixel models: MuZero
+### Planning-centric, non-pixel models: MuZero
 
 **MuZero** is sometimes described as a world model that doesn’t try to reconstruct the world. Instead, it learns a model that predicts the quantities most relevant to planning—**reward, value, and policy**—and uses tree search. ([Schrittwieser et al., 2020][9])
 
@@ -243,12 +319,12 @@ This is an important conceptual branch:
 * A “world model” doesn’t have to be a realistic simulator in pixel space.
 * It can be an *abstract dynamics model* that is only required to be accurate for decision-making.
 
-### 5) Video-prediction world models for sample efficiency: SimPLe and beyond
+### Video-prediction world models for sample efficiency: SimPLe and beyond
 
 **SimPLe** (Kaiser et al.) is an example of using learned video prediction models as simulators to train policies with limited environment interaction (often discussed in the Atari 100k setting). ([Kaiser et al., 2020][10])
 This line emphasizes the classic tradeoff: pixel-predictive models can be expensive and brittle, but they can reduce real interaction needs if made good enough.
 
-### 6) Large-scale interactive environment generation: Genie series
+### Large-scale interactive environment generation: Genie series
 
 More recently, the term "world model" is also used for large models that generate **interactive environments** from broad data sources.
 
@@ -258,7 +334,7 @@ More recently, the term "world model" is also used for large models that generat
 
 This is a shift from “world model for one RL benchmark” to “world model as a general interactive generator.”
 
-### 7) Representation-predictive (non-generative) world models: JEPA / V-JEPA 2
+### Representation-predictive (non-generative) world models: JEPA / V-JEPA 2
 
 Another modern branch argues you don’t always need to predict pixels; you can predict *representations*.
 
@@ -268,89 +344,8 @@ Another modern branch argues you don’t always need to predict pixels; you can 
 This family is often motivated by: *prediction at the pixel level forces the model to care about irrelevant detail*, while representation prediction can focus on task-relevant structure.
 
 
-## *World Models* ([Ha & Schmidhuber, 2018][1])
-
-*World Models* (Ha & Schmidhuber, 2018) introduces a clean, modular recipe for learning a latent simulator and using it for control:
-
-**compress → predict → control**.
-
-![World Models (2018) overall architecture: VAE (V) compresses frames to latents, MDN-RNN (M) predicts next-latent distributions, controller (C) acts on latent + RNN hidden state](/assets/images/world-models/world-models-2018-architecture.png)
-
-*Figure 1: Overall architecture (VAE $\to$ MDN-RNN $\to$ controller) (source: [Ha & Schmidhuber, 2018][1]).*
-
-At each time step $t$, the observation $o_t$ is encoded by $V$ into a compact latent $z_t$. The dynamics model $M$ maintains a recurrent hidden state $h_t$ (its “memory”) and updates it using the current latent and action, e.g. $h_{t+1}=\mathrm{RNN}(h_t, z_t, a_t)$; from the updated state it produces a distribution over the next latent $p(z_{t+1}\mid h_{t+1})$ for “dreamed” rollouts. The controller $C$ takes the concatenation $[z_t, h_t]$ and outputs an action $a_t$ to the environment. The real environment produces the next observation $o_{t+1}$, and the loop repeats. ([Ha & Schmidhuber, 2018][1])
-
-### State and components (VAE + MDN-RNN + controller)
-
-The model is explicitly modular:
-
-* **V (Vision, VAE)**: compress observations to a latent.
-  $$z_t = \mathrm{Enc}(o_t),\; \hat o_t = \mathrm{Dec}(z_t)$$
-  In their setup, $o_t$ is a 64×64 RGB frame and $z_t$ is a low-dimensional latent (e.g. $\mathbb{R}^{32}$ for CarRacing, $\mathbb{R}^{64}$ for Doom).
-
-* **M (Memory/dynamics, MDN-RNN)**: predict a *distribution* over next latents.
-  $$h_{t+1}=\mathrm{RNN}(h_t, z_t, a_t),\; p(z_{t+1}\mid h_{t+1})=\mathrm{MDN}(h_{t+1})$$
-  Here, an **MDN (mixture density network)** means we model the next-latent density as a **mixture of Gaussians** (so the network outputs mixture weights, means, variances).
-  Sampling uses a **temperature $\tau$** to control how “stochastic” the imagined rollouts are (loosely: higher $\tau$ → more randomness → harder-to-exploit dreams).
-
-* **C (Controller / policy)**: a deliberately tiny **single-layer linear** policy that maps the concatenated input $[z_t, h_t]$ directly to the action at each time step:
-  $$a_t = W_c\,[z_t\; h_t] + b_c$$
-  Here, $W_c$ and $b_c$ are the weight matrix and bias vector that map the latent+memory features into the action vector.
-
-### Mapping to LeCun’s Enc/Pred scaffold
-
-Using notation ($o_t, a_t, \mathrm{Enc}, \mathrm{Pred}, s_t, z_t$), the 2018 architecture can be read as a concrete instantiation. With a slight abuse of notation, I’ll reuse $z_t$ to denote the VAE latent code, and I’ll use $\xi_t$ for the MDN sampling randomness.
-
-* **Observation $o_t$**: an observed (rendered) image frame.
-* **Action $a_t$**: environment controls (e.g., steering/throttle/brake in CarRacing).
-
-* **Encoder $h_t = \mathrm{Enc}_\phi(o_t)$**: corresponds to the **VAE encoder** output (latent code):
-  $$z_t = \mathrm{Enc}^{\text{VAE}}_\phi(o_t)$$
-
-* **World-state $s_t$**: corresponds to the **RNN hidden state** (the paper’s “memory”):
-  $$s_{t+1} = \mathrm{RNN}_\theta(s_t, z_t, a_t)$$
-
-* **Predictor $\mathrm{Pred}_\theta$**: the MDN-RNN is effectively the transition model that (i) updates $s_t$ and (ii) outputs a distribution over next latents:
-  $$s_{t+1}=\mathrm{RNN}_\theta(s_t, z_t, a_t),\qquad p_\theta(z_{t+1}\mid s_{t+1}) = \mathrm{MDN}_\theta(s_{t+1})$$
-
-* **Optional decoder**: $\hat o_t = \mathrm{Dec}(z_t)$ exists for visualization/reconstruction, but control is trained on latents + memory.
-
-
-### Training objective (model learning)
-
-This paper’s training is best understood as a **staged procedure**: learn a latent representation ($V$), learn latent dynamics ($M$), then learn a controller ($C$) that exploits the learned dynamics.
-
-Concretely (CarRacing), the pipeline is:
-
-1. Collect 10,000 rollouts from a random policy.
-2. Train $V$ (VAE) to encode frames into $z_t\in\mathbb{R}^{32}$.
-3. Train $M$ (MDN-RNN) to model $p(z_{t+1}\mid a_t, z_t, h_t)$.
-4. Define the controller $C$ as a tiny linear policy, $a_t = W_c\,[z_t\; h_t] + b_c$.
-5. Use CMA-ES to optimize $(W_c, b_c)$ to maximize expected cumulative reward.
-
-Notes on what’s being optimized:
-
-* **$V$ (VAE)** is trained to reconstruct frames while regularizing the latent distribution (so $z_t$ stays compact and smooth).
-* **$M$ (MDN-RNN)** is trained by maximum likelihood: given $(z_t, a_t)$ and memory, assign high probability to the observed $z_{t+1}$ (with a mixture head to represent multimodal next-latents).
-* **$C$** is not trained by backpropagating through $M$ here; it’s optimized as a black-box policy (CMA-ES) evaluated inside the dreamed rollouts.
-
-### Planning/control usage (the “dream” loop)
-
-The key demo is that you can train a controller *inside the learned model’s own “dream”* and then transfer it to the real environment.
-
-Control is learned *through the model*, not by differentiable planning:
-
-* Collect rollouts (random policy in the paper).
-* Fit $V$ and $M$ from data.
-* Roll out an imagined latent environment by sampling $z_{t+1}$ from $M$ (with $\tau$) and feeding it back into the RNN.
-  - You can decode $z_t$ back to pixels for visualization, but control only needs latents.
-* Optimize **C** inside the dreamed environment (they use **CMA-ES**, i.e. black-box optimization), then deploy C in the real environment.
-
-The temperature result is a nice early lesson: making imagination slightly “noisier” can improve transfer by forcing robustness to model error.
-
-
-
-## 1) Generative latent-dynamics world models (World Models 2018, PlaNet/RSSM, Dreamer)
+ 
+## Generative latent-dynamics world models (World Models 2018, PlaNet/RSSM, Dreamer)
 
 ### State-space form
 
@@ -441,7 +436,7 @@ Dreamer ([Hafner et al., 2020][4]) keeps the RSSM world model but changes the co
 
 ---
 
-## 2) Model-based planning with “value-equivalent” latent dynamics (MuZero-style)
+## Model-based planning with “value-equivalent” latent dynamics (MuZero-style)
 
 MuZero is best viewed as **model-based planning** rather than a (generative) “world model”: it learns an internal dynamics that is accurate only for **decision-relevant predictions** (reward / value / policy), without trying to reconstruct observations.
 
@@ -511,7 +506,7 @@ MuZero fits LeCun’s scaffold cleanly if we treat the latent state as the “wo
 
 ---
 
-## 3) JEPA / Non-generative predictive world models (representation prediction)
+## JEPA / Non-generative predictive world models (representation prediction)
 
 These models typically avoid reconstructing pixels and instead predict **representations**.
 
@@ -554,7 +549,7 @@ Because there is no pixel likelihood, the encoder could collapse to a constant e
 
 ---
 
-## 4) Internet-scale generative video models (diffusion / autoregressive token video)
+## Internet-scale generative video models (diffusion / autoregressive token video)
 
 These are “world-model-like” when they can be **conditioned on actions** and rolled forward consistently. Mathematically, they are sequence generative models over video tokens or pixels.
 
@@ -592,7 +587,7 @@ At generation time, the stochasticity is in the diffusion noise trajectory (agai
 
 ---
 
-## 5) Robotics-native / Vision-Language-Action world models (latent actions, inverse dynamics)
+## Robotics-native / Vision-Language-Action world models (latent actions, inverse dynamics)
 
 This family is basically about **learning a controllable dynamics model** when actions are missing, high-dimensional, or partially observed.
 
@@ -776,34 +771,34 @@ They can struggle when:
 
 I’ll tag each item with: **(Objective family)** + what plays the role of $(s_t, z_t, a_t)$.
 
-## 1) Canonical foundation
+## Canonical foundation
 
 * **World Models ([Ha & Schmidhuber, 2018][1])** — **(A)**. $s_t$ = RNN hidden, $z_t$ = MDN mixture component/noise; learns latent dynamics + reconstructs via VAE; controller trained on $[z_t, h_t]$.
 * **Dreamer (V1–V3)** — **(A)**. $s_t$ = RSSM belief (deterministic + stochastic), $z_t$ = stochastic latent; trains by ELBO-style reconstruction + reward/value; learns policy “in imagination.”
 * **Dreamer 4** — **(A)**. Same template; scaled world-model + imagination training in more complex settings (your “new peak” successor).
 
-## 2) JEPA school (non-generative predictive)
+## JEPA school (non-generative predictive)
 
 * **V-JEPA (2024)** — **(B)**. Predict masked/future *embeddings*; $s_t$ is transformer context/belief; $z_t$ often implicit; no pixel likelihood.
 * **V-JEPA 2 (2025)** — **(B)**. Same, but explicitly positioned for physical reasoning/planning with representation prediction.
 * **What Drives Success in Physical Planning with JEPA-WMs? (Dec 2025)** — **(B → analysis)**. Not a new model family; it’s the “mechanism + eval” anchor explaining when **(B)** works.
 * **LeJEPA (2025)** — **(B)**. Adds stronger anti-collapse / structure constraints and better planning behavior in JEPA-style worlds.
 
-## 3) Video-as-world-simulators (generative)
+## Video-as-world-simulators (generative)
 
 * **Sora / Sora 2** — **(A)** in the *observation-model* sense: learns $p(o_{t+1:t+K}\mid o_{\le t}, c)$ with sampling noise as $z$. “World-model-ness” depends on controllable/action-conditioned rollouts; Sora 2 is explicitly positioned as higher fidelity + audio.  *(If you want, we can cite the exact OpenAI page again in this section.)*
 * **Genie 3 (Aug 2025)** — **(A, interactive)**. Generative video world model with user interactivity; $a_t$ is effectively present (control inputs), $z_t$ = generation stochasticity.
 * **Cosmos (NVIDIA, Jan 2025)** — **(A)**. “World foundation model” framing for physical AI; typically generative video backbone + control adaptation.
 * **Commercial video models (Runway/Luma/Kling)** — generally **(A)**; useful as “capability pressure,” but cite sparingly unless you need benchmarking claims.
 
-## 4) Embodied world models (robotics-native / VLA)
+## Embodied world models (robotics-native / VLA)
 
 * **1X World Model (2024–2025)** — typically **(A or B)** depending on whether they decode pixels or predict structured latents; the key is $a_t$ is robot action and $s_t$ is embodied belief about a home scene.
 * **Cosmos Policy (Jan 2026)** — **(A→policy)**. Start from a generative world model, then post-train into visuomotor control (policy/value/planning heads become primary).
 * **AdaWorld (ICML 2025)** — **(A with learned actions)**. Learns **latent actions from video** then trains an autoregressive world model conditioned on those latent actions; adapts to new action spaces efficiently. ([Zhu et al., 2025][16])
 * **TesserAct: Learning 4D Embodied World Models (2025)** — often **(A or B)** with 4D (3D+time) state; $s_t$ becomes a 4D scene representation for navigation/planning.
 
-## 5) Critical analysis & philosophy
+## Critical analysis & philosophy
 
 * **“Is Sora a World Simulator? A Comprehensive Survey”** — meta-taxonomy; use it to separate “video generator” vs “action-conditioned counterfactual simulator.” (Mostly about defining what qualifies as a world model.)
 * **“Sora and V-JEPA Have Not Learned The Complete Real World Model” (Zhang, 2024)** — philosophical critique; helpful for your “limits: causality/agency” section.
@@ -913,7 +908,7 @@ How that policy is trained / coupled to the world model is the key “interactio
 
 This is the dimension that really differentiates “schools in practice.” You can define $\mathcal{M}_\theta$ as the world model ($\mathrm{Enc}$ + $\mathrm{Pred}$ + optional heads).
 
-## 1) Model-predictive control (implicit policy via planning)
+## Model-predictive control (implicit policy via planning)
 
 **No explicit policy required** (or an optional warm-start policy).
 
@@ -931,7 +926,7 @@ This is the dimension that really differentiates “schools in practice.” You 
 
 ---
 
-## 2) Imagination training (explicit policy learns inside the model)
+## Imagination training (explicit policy learns inside the model)
 
 This is the Dreamer / “World Models 2018 dreams” coupling.
 
@@ -951,7 +946,7 @@ with gradients possibly flowing through the model (Dreamer-style) or not (evolut
 
 ---
 
-## 3) Search-augmented policy (explicit + implicit hybrid)
+## Search-augmented policy (explicit + implicit hybrid)
 
 Search produces a better action distribution; the policy is trained to imitate or to output priors for search.
 
@@ -972,7 +967,7 @@ MuZero is the canonical structure:
 
 ---
 
-## 4) Distillation / post-training (world model → policy)
+## Distillation / post-training (world model → policy)
 
 A world model is pretrained (often on video), then adapted into a policy.
 
@@ -1002,7 +997,7 @@ $$
 
 ---
 
-## 5) Latent-action coupling (policy over learned action tokens)
+## Latent-action coupling (policy over learned action tokens)
 
 When true actions aren’t available (internet video), the “policy” is over latent actions $u_t$:
 
@@ -1094,4 +1089,5 @@ World Models
 [18]: https://arxiv.org/abs/2405.01527 "Track2Act: Predicting Point Tracks from Internet Videos enables Generalizable Robot Manipulation"
 [19]: https://bmvc2025.bmva.org/proceedings/124/ "Mask2Act: Predictive Multi-Object Tracking as Video Pre-Training"
 [20]: https://x.com/ylecun/status/1759933365241921817 "Yann LeCun on world models (X post)"
+[21]: http://incompleteideas.net/book/the-book-2nd.html "Sutton & Barto (2018), Reinforcement Learning: An Introduction (2nd ed.)"
 
