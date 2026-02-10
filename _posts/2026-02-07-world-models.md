@@ -229,8 +229,6 @@ $$
 
 The expectation is over the model’s stochastic latents. In practice, PlaNet uses the **cross-entropy method (CEM)** to search over action sequences. After CEM returns an optimized sequence, the agent executes only the first action (a_t^*), receives the next observation, updates its belief state, and replans. This makes PlaNet a clear instance of an **implicit policy**: the planner is the policy. ([Hafner et al., 2019][3])
 
-> **Insert graphic (existing):** the PlaNet overview diagram showing latent rollouts predicting rewards (and optionally observations) is ideal here. The Google Research post has a clean conceptual figure, and the paper contains RSSM design diagrams as well. ([Hafner et al., 2019][3])
-
 
 ### Dreamer: imagination training and an explicit policy
 
@@ -252,8 +250,6 @@ s_{t+k+1}\sim p_\theta(\cdot\mid s_{t+k}, a_{t+k}).
 $$
 
 The critic provides value estimates and bootstrapping targets on imagined trajectories, allowing long-horizon learning without planning-time search at every environment step. Conceptually, the policy improvement step happens in the model’s latent “imagination,” rather than in the real environment. ([Hafner et al., 2020][4])
-
-> **Insert graphic (existing):** Dreamer’s diagram showing the three components trained together: world model, actor, and critic. DreamerV3 highlights this as Figure 3 in its paper. ([Hafner et al., 2023][7])
 
 
 
@@ -369,8 +365,6 @@ $$
 
 So the conceptual step from V-JEPA to V-JEPA 2-AC is: *masked representation prediction* $\rightarrow$ *action-conditioned latent rollouts usable inside MPC*. ([Bardes et al., 2025][14])
 
-> **Insert graphic (existing):** V-JEPA 2 overview figure from the paper, ideally the one that contrasts the pretraining setup with the action-conditioned planning setup. ([Bardes et al., 2025][14])
-
 This gives a compact way to relate JEPA to generative latent-dynamics models: Dreamer-like methods keep latents grounded by making them predictive of $x_t$ through an observation model; JEPA-like methods remove the decoder and instead pay an explicit “anti-collapse” tax (EMA target encoder). The resulting representation may be less tied to pixel-level detail, but it can be easier to scale and can serve as a strong prior for downstream planning when an action-conditioned head is introduced. ([Assran et al., 2023][13]; [Bardes et al., 2025][14])
 
 
@@ -412,8 +406,6 @@ $$
 
 This is a powerful generative modeling pipeline, but it becomes “world-model-like” only when it supports iterative online updates and action-conditioned counterfactuals.
 
-> **Graphic suggestion:** the “spacetime patches” and diffusion-transformer visuals are a good neutral architecture illustration for this class of models, even if the section avoids calling them world models. ([OpenAI][22])
-
 ### Plausibility vs counterfactual control
 
 The practical critique can be stated in one sentence: a convincing video continuation does not imply reliable counterfactual control. RL-style world models require that interventions cause consistent downstream changes. In notation, the requirement is not “can it sample plausible $x_{1:T}$?” but “given the same state $s_t$, do different actions $a_t$ produce different, consistent futures according to $\mathrm{Pred}(s_t, a_t, z_t)$?” This is why action-free pretraining can be an excellent prior, but it is not sufficient to claim an environment model.
@@ -428,10 +420,6 @@ Genie 2 is framed as a larger-scale foundation world model that can generate a d
 
 Genie 3 pushes further in the same direction and emphasizes real-time interactive generation (reported as 24 FPS at 720p in external reporting) and longer interaction horizons. In the terms of this post, Genie 3 is “world-model-like” primarily because it makes the counterfactual query feel operational: “go left” is a well-defined action input repeatedly applied over time, not a one-shot conditioning prompt. ([Google DeepMind, 2025][12])
 
-> **Graphic suggestion:** use the overview figure from the Genie paper (tokenizer + dynamics model + latent actions) for the core idea. ([Bruce et al., 2024][11])
-> **Graphic suggestion:** use the Genie 2 blog’s main visuals as the “interactive worlds from prompts” update. ([Google DeepMind][23])
-> **Graphic suggestion:** use the Genie 3 comparison-table image from the Genie 3 blog (or official post you cite) as the quick “iteration snapshot.” ([Google DeepMind, 2025][12])
-
 A compact way to summarize Genie 1/2/3 as a single arc is: start from passive video priors, add an action interface via latent actions and interactive rollouts, then extend coherence and controllability as the primary product requirement. The underlying modeling choices can vary, but the contribution is consistent: Genie treats interactivity as part of the definition, not a downstream add-on.
 
 ### Cosmos: the “Physical AI platform” view of world models
@@ -442,8 +430,6 @@ Two points connect Cosmos cleanly to the formalism in earlier sections:
 
 * Cosmos treats a world foundation model as a general-purpose prior that can be fine-tuned into a customized environment model. This matches the idea that passive video can give you strong dynamics priors, but you still need alignment to actions, sensors, and downstream objectives for control. ([NVIDIA, 2025][24])
 * Cosmos explicitly describes the “digital twin” framing: a policy model, and a world model that can generate the training data and scenarios needed before real-world deployment. This makes the role of world models concrete as infrastructure for Physical AI, not just a benchmark agent component. ([NVIDIA, 2025][24])
-
-> **Graphic suggestion:** use the Cosmos paper’s overview figure that depicts the platform pipeline (data curation, tokenizers, pretrained world foundation model, post-training, downstream applications). ([NVIDIA, 2025][24])
 
 ### Where this sits relative to latent-dynamics and JEPA
 
@@ -511,8 +497,6 @@ The latent action $u_t$ plays the role of a control token that “explains” wh
 
 This makes the “action channel” portable: $u_t$ becomes a universal interface that can be reused across environments with different physical action parameterizations. ([AdaWorld, 2025][16])
 
-> **Graphic #11 (existing):** AdaWorld overview figure showing latent action space and adaptation to new environments. ([AdaWorld, 2025][16])
-
 ### Why latent actions help
 
 Latent actions complete the RL loop for passive predictors by turning “what happens next” into “what happens if I do this.” The coupling to policy learning can be expressed in two equivalent ways that match the earlier policy axis.
@@ -554,8 +538,6 @@ A compact way to say it is:
 
 * AdaWorld emphasizes a transferable action interface $u_t$ and small adapters for new action spaces.
 * Cosmos Policy emphasizes a post-training recipe that turns a video foundation model into a direct visuomotor policy, optionally augmented with model-based planning via future prediction and value estimation. ([NVIDIA, 2026][25])
-
-> **Graphic #12 (existing, recommended):** Cosmos Policy Figure 1 (policy predicts action chunk, future state, and value) or the project-page benchmark table. ([NVIDIA, 2026][26])
 
 ### Other routes to add actions
 

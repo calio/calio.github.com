@@ -6,3 +6,6 @@ _site/
 vendor/
 Gemfile.lock
 .playwright-mcp/
+
+*.backup
+*.backup*
